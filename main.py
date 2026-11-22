@@ -1,24 +1,38 @@
-import os
-from dotenv import load_dotenv
+import asyncio
 from vkbottle import Bot
-from vkbottle.bot import Message
+from config import BOT_TOKEN
+from utils.logger import logger
 
-load_dotenv()  # Загружаем секретные данные из файла .env
+# Импортируем только те обработчики, которые у тебя реально есть
+from handlers import start, echo
 
-TOKEN = os.getenv("MY_TOKEN")  # Берём токен из окружения
-bot = Bot(token=TOKEN)  # Создаём и авторизуем бота
+async def main():
+    """Основная функция запуска бота"""
 
-  # Отправляем ответ
+    # Создаём бота
+    bot = Bot(token=BOT_TOKEN)
 
+    logger.info("🚀 Запуск бота...")
+    # Можно оставить вывод токена для проверки, но лучше его скрыть в продакшене
+    logger.info(f"Token: {BOT_TOKEN[:20]}...")
 
-@bot.on.message(text="время")  # Реагируем на сообщение "Привет"
-async def greeting_handler(message: Message):
-    await message.answer("я так не умею")
-
-
-@bot.on.message()  # Реагируем на сообщение "Привет"
-async def greeting_handler(message: Message):
-    await message.answer(b)
+    # ==========================================
+    # ОЧЕРЕДЬ ВЫЗОВА ОБРАБОТЧИКОВ (СВЕРХУ ВНИЗ)
+    # ==========================================
     
-print("Запуск бота...")
-bot.run()  # Запускаем бесконечную работу бота
+    # 1. Первым проверяем конкретные команды (твоя команда "время")
+    await start.register_handlers(bot)
+    
+    # 2. Эхо всегда должно быть ПОСЛЕДНИМ, так как оно ловит всё подряд
+    await echo.register_handlers(bot)
+    
+    # ==========================================
+
+    logger.info("✅ Все обработчики зарегистрированы")
+    logger.info("🤖 Бот запущен и слушает сообщения...")
+
+    # Запускаем бота
+    await bot.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
